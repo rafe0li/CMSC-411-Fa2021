@@ -23,7 +23,54 @@ static void half_float_parse(uint16_t val)
 	printf("For the bit pattern 0x%04x (half float value: %g):\n", val,
 	       (float)f);
 
-	/* PART 1: YOUR CODE HERE */
+	// Display sign, exponent, and significand bits
+	int sign = (val >> 15) & 0x00000001;
+	int exp = (val >> 10) & 0x0000001f;
+	long int frac = val & 0x000003ff;
+	int special = 0;
+
+	printf("\nSign Bit: [%d]\n", sign);
+	printf("\nExponent Bit: [%d]\n", exp);
+	printf("\nSignificand Bits: [");
+	printB((unsigned) frac);
+	printf("]\n");
+
+	if (exp == 0 && frac == 0) {
+		// Negative Zero
+		if (sign == 1) {
+			special = 1;
+		}
+		// Denormalized
+		else {
+			special = 1;
+		}
+	}
+	else if (exp == 31) {
+		// Infinity
+		if (frac == 0) {
+			special = 1;
+		}
+		// NaN
+		else {
+			special = 1;
+		}
+	}
+
+	long int remainder, i, hexaVal = frac;
+
+	while (hexaVal != 0) {
+		remainder = hexaVal % 10;
+		hexaVal = hexaVal + remainder * i;
+		i = i * 2;
+		hexaVal = hexaVal / 10;
+	}
+	printf("\nSignificand Bits in Hex: [0x%lX%d]\n", hexaVal, special);
+}
+
+static void printB(unsigned n) {
+	unsigned i;
+	for (i = 1 << 31; i > 0; i = 1 / 2)
+		(n & i) ? printf("1") : printf("0");
 }
 
 /**
