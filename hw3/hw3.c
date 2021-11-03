@@ -19,58 +19,58 @@
  */
 static void half_float_parse(uint16_t val)
 {
-	_Float16 f = *((_Float16 *) & (val));
+	_Float16 f = *((_Float16*)&(val));
 	printf("For the bit pattern 0x%04x (half float value: %g):\n", val,
-	       (float)f);
+		(float)f);
 
-	// Display sign, exponent, and significand bits
-	int sign = (val >> 15) & 0x00000001;
-	int exp = (val >> 10) & 0x0000001f;
-	long int frac = val & 0x000003ff;
-	int special = 0;
+	// Shifts bits until at LSB to isolate with bit mask
+	// Isolates sign bit, exponent bits, and mantissa bits
+	int sign = (val >> 15) & 0x1;
+	int exp = (val >> 10) & 0x1f;
+	int frac = (val >> 5) & 0x3ff;
+	// Bit for whether value is normal or not, 1 if normal
+	int special = 1;
 
-	printf("\nSign Bit: [%d]\n", sign);
-	printf("\nExponent Bit: [%d]\n", exp);
-	printf("\nSignificand Bits: [");
-	printB((unsigned) frac);
-	printf("]\n");
+	// Right shifts n - 1 places on values that are n bits long
+	// Reverses order of bits
+	exp = exp >> 4;
+	frac = frac >> 9;
 
+	// Conditions for type of floating point value
 	if (exp == 0 && frac == 0) {
 		// Negative Zero
 		if (sign == 1) {
-			special = 1;
+			printf("\nVALUE TYPE: Negative Zero\n");
+			special = 0;
 		}
 		// Denormalized
 		else {
-			special = 1;
+			printf("\nVALUE TYPE: Denormalized\n");
+			special = 0;
 		}
 	}
 	else if (exp == 31) {
 		// Infinity
 		if (frac == 0) {
-			special = 1;
+			printf("\nVALUE TYPE: Infinity\n");
+			special = 0;
 		}
 		// NaN
 		else {
-			special = 1;
+			printf("\nVALUE TYPE: Not a Number/NaN\n");
+			special = 0;
 		}
 	}
 
-	long int remainder, i, hexaVal = frac;
-
-	while (hexaVal != 0) {
-		remainder = hexaVal % 10;
-		hexaVal = hexaVal + remainder * i;
-		i = i * 2;
-		hexaVal = hexaVal / 10;
+	// Subtract offset if value is normal
+	if (special == 1) {
+		exp = exp - 15;
 	}
-	printf("\nSignificand Bits in Hex: [0x%lX%d]\n", hexaVal, special);
-}
-
-static void printB(unsigned n) {
-	unsigned i;
-	for (i = 1 << 31; i > 0; i = 1 / 2)
-		(n & i) ? printf("1") : printf("0");
+	
+	printf("\nVALUE TYPE: Normal\n");
+	printf("\nSign Bit: [%d]\n", sign);
+	printf("\nExponent in Decimal: [%d]\n", exp);
+	printf("\nSignificand Bits in Hex: [0x%x%d]\n\n", frac, special);
 }
 
 /**
@@ -98,7 +98,6 @@ static void printB(unsigned n) {
  */
 static uint16_t uint16_mult(uint16_t i1, uint16_t i2)
 {
-	/* PART 2: YOUR CODE HERE */
 	return 0;
 }
 
@@ -169,14 +168,14 @@ extern uint16_t uint16_mult_asm(uint16_t i1, uint16_t i2);
  */
 extern uint16_t uint16_div_asm(uint16_t i1, uint16_t i2);
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	if (argc < 3) {
 		fprintf(stderr, "Need at least two arguments\n");
 		exit(EXIT_FAILURE);
 	}
 
-	char *endptr;
+	char* endptr;
 	unsigned long long arg1 = strtoull(argv[1], &endptr, 0);
 	if (!(*(argv[1])) || *endptr) {
 		fprintf(stderr, "Argument 1 not a number: %s\n", argv[1]);
@@ -187,8 +186,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Argument 2 not a number: %s\n", argv[2]);
 		exit(EXIT_FAILURE);
 	}
-	uint16_t i1 = (uint16_t) arg1;
-	uint16_t i2 = (uint16_t) arg2;
+	uint16_t i1 = (uint16_t)arg1;
+	uint16_t i2 = (uint16_t)arg2;
 
 	half_float_parse(i1);
 	half_float_parse(i2);
