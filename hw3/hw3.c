@@ -10,7 +10,7 @@
  * floating point representation.
  *
  * Display the sign bit, un-biased exponent, and significand
- * (including the leading implied bit). If the value is special,
+ * (including the leading implied bit). If the value is normal,
  * display what kind of value it is. For infinity and NaN, the leading
  * implied bit is a don't care, and the actual magnitude is a don't
  * care.
@@ -27,9 +27,11 @@ static void half_float_parse(uint16_t val)
 	// Isolates sign bit, exponent bits, and mantissa bits
 	int sign = (val >> 15) & 0x1;
 	int exp = (val >> 10) & 0x1f;
-	int frac = (val >> 5) & 0x3ff;
+	int frac = val & 0x3ff;
 	// Bit for whether value is normal or not, 1 if normal
-	int special = 1;
+	int normal = 1;
+	// True if value is infinity or nan
+	int infnan = 0;
 
 	// Right shifts n - 1 places on values that are n bits long
 	// Reverses order of bits
@@ -41,36 +43,48 @@ static void half_float_parse(uint16_t val)
 		// Negative Zero
 		if (sign == 1) {
 			printf("\nVALUE TYPE: Negative Zero\n");
-			special = 0;
+			normal = 0;
 		}
 		// Denormalized
 		else {
 			printf("\nVALUE TYPE: Denormalized\n");
-			special = 0;
+			normal = 0;
 		}
 	}
 	else if (exp == 31) {
 		// Infinity
 		if (frac == 0) {
 			printf("\nVALUE TYPE: Infinity\n");
-			special = 0;
+			normal = 0;
 		}
 		// NaN
 		else {
 			printf("\nVALUE TYPE: Not a Number/NaN\n");
-			special = 0;
+			normal = 0;
 		}
+		infnan = 1;
 	}
 
-	// Subtract offset if value is normal
-	if (special == 1) {
-		exp = exp - 15;
+	val = val << 4;
+
+	printf("\nVAL SIGNIFICAND: [%d]\n", frac);
+
+	if (normal) {
+		printf("\nVALUE TYPE: Normal\n");
 	}
-	
-	printf("\nVALUE TYPE: Normal\n");
 	printf("\nSign Bit: [%d]\n", sign);
-	printf("\nExponent in Decimal: [%d]\n", exp);
-	printf("\nSignificand Bits in Hex: [0x%x%d]\n\n", frac, special);
+	printf("\nExponent in decimal: [%d]\n", exp);
+	// Subtract offset if value is normal
+	if (normal == 1) {
+		exp = exp - 15;
+		printf("Actual Magnitude of Exponent: [%d]\n", exp);
+	}
+	if (infnan) {
+		printf("\nSignificand Bits in Hex: [0xX%X]\n\n", frac);
+	}
+	else {
+		printf("\nSignificand Bits in Hex: [0x%X]\n\n", frac);
+	}
 }
 
 /**
@@ -98,7 +112,23 @@ static void half_float_parse(uint16_t val)
  */
 static uint16_t uint16_mult(uint16_t i1, uint16_t i2)
 {
-	return 0;
+	uint16_t prod = 0;
+	int i;
+	// If LSB of multiplier is 1, then add multiplicand to product
+	if ((i2 & 0x1) == 1) {
+		prod += i2;
+	}
+	// Shifts multiplicand left and multiplier right
+	i1 = i1 << 1;
+	i2 = i2 >> 1;
+	for (i = 0; i < 16; i++) {
+		if ((i2 & 0x1) == 1) {
+			prod += i2;
+		}
+		i1 = i1 << 1;
+		i2 = i2 >> 1;
+	}
+	return prod;
 }
 
 /**
@@ -128,7 +158,6 @@ static uint16_t uint16_mult(uint16_t i1, uint16_t i2)
  */
 static uint16_t uint16_div(uint16_t i1, uint16_t i2)
 {
-	/* PART 3: YOUR CODE HERE */
 	return 0;
 }
 
