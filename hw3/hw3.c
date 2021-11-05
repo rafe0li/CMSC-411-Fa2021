@@ -1,4 +1,22 @@
-/* YOUR FILE-HEADER COMMENT HERE */
+/*@author Rafael Li, rafaell1@umbc.edu
+* @hw3.c
+* C program that takes two 16-bit unsigned integers and interprets them as 
+* a IEEE-754 half-precision values, displaying the sign bit, the value of the exponent
+* as a decimal (along with the actual magnitude, without bias of 15 for normal
+* values), and the value of the significand in hex. The program then multiplies these
+* numbers with a shift-add multiplication routine and divides them with a shift-subtract
+* division routine. The program calls asm routines that perform the same algorithm.
+*/
+
+/* 1. The least number of cycles it would take would be for a 
+*  value that only requires the multiplicand to be added once.
+*  4 cycles under DEFINE, 4 cycles in booths_top if adding
+*  multiplicand, 1 cycle in booths_add_multiplicand, and 9 cycles 
+*  in booths_shift, thus total 18 cycles.
+* 
+*  2. Worst case would be a shift add for every bit,
+*  18 cycles * 16 bits = 288 cycles.
+ */
 
 #include <inttypes.h>
 #include <stdbool.h>
@@ -23,20 +41,24 @@ static void half_float_parse(uint16_t val)
 	printf("For the bit pattern 0x%04x (half float value: %g):\n", val,
 		(float)f);
 
-	// Shifts bits until at LSB to isolate with bit mask
-	// Isolates sign bit, exponent bits, and mantissa bits
-	int sign = (val >> 15) & 0x1;
-	int exp = (val >> 10) & 0x1f;
-	int frac = val & 0x3ff;
 	// Bit for whether value is normal or not, 1 if normal
 	int normal = 1;
-	// True if value is infinity or nan
+	// True if value is Infinity or NaN
 	int infnan = 0;
+
+	// Shifts bits until at LSB to isolate with bit mask
+	// Isolates sign bit, exponent bits, and mantissa bits
+	val = (val << 1) | (val >> (16 - 1));
+	int sign = val & 0x1;
+	val = (val << 5) | (val >> (16 - 5));
+	int exp = val & 0x1f;
+	val = (val << 10) | (val >> (16 - 10));
+	int frac = val & 0x3ff;
 
 	// Right shifts n - 1 places on values that are n bits long
 	// Reverses order of bits
-	exp = exp >> 4;
-	frac = frac >> 9;
+	exp = (exp >> 4) | (exp << (5 - 4));
+	frac = (frac >> 9) | (frac << (10 - 9));
 
 	// Conditions for type of floating point value
 	if (exp == 0 && frac == 0) {
@@ -65,25 +87,24 @@ static void half_float_parse(uint16_t val)
 		infnan = 1;
 	}
 
-	val = val << 4;
-
-	printf("\nVAL SIGNIFICAND: [%d]\n", frac);
-
 	if (normal) {
 		printf("\nVALUE TYPE: Normal\n");
 	}
 	printf("\nSign Bit: [%d]\n", sign);
 	printf("\nExponent in decimal: [%d]\n", exp);
-	// Subtract offset if value is normal
+	// Subtract offset if value is normal and display actual magnitude
 	if (normal == 1) {
 		exp = exp - 15;
-		printf("Actual Magnitude of Exponent: [%d]\n", exp);
+		printf("Actual Magnitude of Exponent without Bias of 15: [%d]\n", exp);
 	}
+	// If Inf or NaN, actual magnitude and implied bits are don't cares
 	if (infnan) {
-		printf("\nSignificand Bits in Hex: [0xX%X]\n\n", frac);
+		printf("Actual Magnitude of Exponent without Bias of 15: [X]\n");
+		printf("\nSignificand Bits in Hex without implied bit (Infinity or NaN): [0xX%X]\n\n", frac);
 	}
+	// Otherwise print with implied bit
 	else {
-		printf("\nSignificand Bits in Hex: [0x%X]\n\n", frac);
+		printf("\nSignificand Bits in Hex with leading implied bit: [0x[%d]%X]\n\n", normal, frac);
 	}
 }
 
@@ -112,20 +133,24 @@ static void half_float_parse(uint16_t val)
  */
 static uint16_t uint16_mult(uint16_t i1, uint16_t i2)
 {
-	uint16_t prod = 0;
 	int i;
+	uint16_t prod = 0;
+
 	// If LSB of multiplier is 1, then add multiplicand to product
 	if ((i2 & 0x1) == 1) {
 		prod += i2;
 	}
-	// Shifts multiplicand left and multiplier right
+	// Logical shift multiplier right
+	i2 = (i2 >> 1) | (i2 << (16 - 1));
+	// Shift multiplicand left
 	i1 = i1 << 1;
-	i2 = i2 >> 1;
+
+	// Loops for every bit
 	for (i = 0; i < 16; i++) {
 		if ((i2 & 0x1) == 1) {
 			prod += i2;
 		}
-		i1 = i1 << 1;
+		i2 = (i2 >> 1) | (i2 << (16 - 1));
 		i2 = i2 >> 1;
 	}
 	return prod;
@@ -158,7 +183,49 @@ static uint16_t uint16_mult(uint16_t i1, uint16_t i2)
  */
 static uint16_t uint16_div(uint16_t i1, uint16_t i2)
 {
-	return 0;
+	uint16_t quot = 0;
+	int i;
+	// Temp values used for appending bits to quotient
+	int one = 0b1;
+	int zero = 0b0;
+
+	// Subtract divisor from dividend
+	i1 = i1 - i2;
+	// If not negative, keep new dividend and append 1 to quotient
+	if (!(i1 < 0)) {
+		quot = (quot << 15) | one;
+	}
+	// Else restore old remainder and append zero to quotient
+	else {
+		i1 = i1 + i2;
+		quot = (quot << 15) | zero;
+	}
+
+	// Logical shift divisor right
+	i2 = (i2 >> 1) | (i2 << (16 - 1));
+	// Shift quotient left
+	quot = quot << 1;
+
+	// Loops for every bit
+	for (i = 0; i < 16; i++) {
+		// Subtract divisor from dividend
+		i1 = i1 - i2;
+		// If not negative, keep new dividend and append 1 to quotient
+		if (!(i1 < 0)) {
+			quot = (quot << 15) | one;
+		}
+		// Else restore old remainder and append zero to quotient
+		else {
+			i1 = i1 + i2;
+			quot = (quot << 15) | zero;
+		}
+
+		// Logical shift divisor right
+		i2 = (i2 >> 1) | (i2 << (16 - 1));
+		// Shift quotient left
+		quot = quot << 1;
+	}
+	return quot;
 }
 
 /**
