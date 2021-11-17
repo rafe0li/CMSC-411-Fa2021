@@ -1,4 +1,6 @@
-/* YOUR FILE-HEADER COMMENT HERE */
+/*@author Rafael Li, rafaell1@umbc.edu
+* @hw4.c
+*/
 
 #include <inttypes.h>
 #include <stdbool.h>
@@ -77,6 +79,13 @@ static bool signal_regwrite(uint16_t inst)
 	return false;
 }
 
+void bin(unsigned n)
+{
+	unsigned i;
+	for (i = 1 << 4; i > 0; i = i / 2)
+		(n & i) ? printf("1") : printf("0");
+}
+
 /**
  * Given a 16-bit value represeting an ULNAv2 instruction, disassemble
  * and describe what it does:
@@ -93,7 +102,143 @@ static void disassemble(uint16_t inst)
 	printf("%04" PRIx16 ": instruction class \"%c\"\n", inst,
 	       inst_class_type);
 
-	/* YOUR PART 1 CODE HERE */
+	// Isolate top 5 bits, represents instruction number
+	inst = (inst << 5) | (inst >> (16 - 5));
+	unsigned inst_num = inst & 0x1f;
+
+	// Print instruct based on instruct number
+
+	printf("this is: ");
+
+	if (!(inst_num ^ 0)) {
+		printf("or");
+	}
+
+	if (!(inst_num ^ 1)) {
+		printf("add");
+	}
+
+	if (!(inst_num ^ 2)) {
+		printf("and");
+	}
+
+	if (!(inst_num ^ 3)) {
+		printf("stw");
+	}
+
+	if (!(inst_num ^ 4)) {
+		printf("br");
+	}
+
+	if (!(inst_num ^ 5)) {
+		printf("cmp");
+	}
+
+	if (!(inst_num ^ 6)) {
+		printf("undef - 06");
+	}
+
+	if (!(inst_num ^ 7)) {
+		printf("ldw");
+	}
+
+	if (!(inst_num ^ 8)) {
+		printf("ash");
+	}
+
+	if (!(inst_num ^ 9)) {
+		printf("addi");
+	}
+
+	if (!(inst_num ^ 10)) {
+		printf("lsh");
+	}
+
+	if (!(inst_num ^ 11)) {
+		printf("stwi");
+	}
+
+	if (!(inst_num ^ 12)) {
+		printf("negi");
+	}
+
+	if (!(inst_num ^ 13)) {
+		printf("brl");
+	}
+
+	if (!(inst_num ^ 14)) {
+		printf("rot");
+	}
+
+	if (!(inst_num ^ 15)) {
+		printf("ldwi");
+	}
+
+	if (!(inst_num ^ 16)) {
+		printf("ori");
+	}
+
+	if (!(inst_num ^ 17)) {
+		printf("undef - 17");
+	}
+
+	if (!(inst_num ^ 18)) {
+		printf("andi");
+	}
+
+	if (!(inst_num ^ 19)) {
+		printf("undef - 19");
+	}
+
+	if (!(inst_num ^ 20)) {
+		printf("movi");
+	}
+
+	if (!(inst_num ^ 21)) {
+		printf("cmpi");
+	}
+
+	if (!(inst_num ^ 22)) {
+		printf("movis");
+	}
+
+	if (!(inst_num ^ 23)) {
+		printf("bl");
+	}
+
+	if (!(inst_num ^ 24)) {
+		printf("b");
+	}
+
+	if (!(inst_num ^ 25)) {
+		printf("b.gt");
+	}
+
+	if (!(inst_num ^ 26)) {
+		printf("b.eq");
+	}
+
+	if (!(inst_num ^ 27)) {
+		printf("b.ge");
+	}
+
+	if (!(inst_num ^ 28)) {
+		printf("b.lt");
+	}
+
+	if (!(inst_num ^ 29)) {
+		printf("b.ne");
+	}
+
+	if (!(inst_num ^ 30)) {
+		printf("b.le");
+	}
+
+	if (!(inst_num ^ 31)) {
+		printf("halt");
+	}
+
+	printf("\n");
 
 	printf("      CondUpdate: %d\n", (signal_condupdate(inst) ? 1 : 0));
 	printf("      MemRead: %d\n", (signal_memread(inst) ? 1 : 0));
