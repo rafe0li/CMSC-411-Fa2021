@@ -21,7 +21,28 @@ static bool signal_condupdate(uint16_t inst)
 	bool D = (inst >> 12) & 1;
 	bool E = (inst >> 11) & 1;
 
-	/* YOUR PART 2 CODE HERE */
+	printf("\nINST: %d%d%d%d%d\n", A, B, C, D, E);
+
+	if (A == 0 && B == 0 && C == 0 && D == 0) {
+		return true;
+	}
+
+	if (A == 0 && B == 0 && C == 0 && D == 1 && E == 0) {
+		return true;
+	}
+
+	if (A == 0 && B == 1 && D == 0 && E == 1) {
+		return true;
+	}
+
+	if (A == 1 && B == 0 && C == 0 && E == 0) {
+		return true;
+	}
+
+	if (B == 0 && C == 1 && D == 0 && E == 1) {
+		return true;
+	}
+
 	return false;
 }
 
@@ -39,7 +60,10 @@ static bool signal_memread(uint16_t inst)
 	bool D = (inst >> 12) & 1;
 	bool E = (inst >> 11) & 1;
 
-	/* YOUR PART 2 CODE HERE */
+	if (A == 0 && C == 1 && D == 1 && E == 1) {
+		return true;
+	}
+
 	return false;
 }
 
@@ -57,7 +81,14 @@ static bool signal_memwrite(uint16_t inst)
 	bool D = (inst >> 12) & 1;
 	bool E = (inst >> 11) & 1;
 
-	/* YOUR PART 2 CODE HERE */
+	if (A == 0 && C == 0 && D == 1 && E == 1) {
+		return true;
+	}
+
+	if (A == 1 && B == 1 && C == 1 && D == 1 && E == 1) {
+		return true;
+	}
+
 	return false;
 }
 
@@ -75,15 +106,51 @@ static bool signal_regwrite(uint16_t inst)
 	bool D = (inst >> 12) & 1;
 	bool E = (inst >> 11) & 1;
 
-	/* YOUR PART 2 CODE HERE */
-	return false;
-}
+	if (A == 0 && B == 0 && C == 0 && D == 0) {
+		return true;
+	}
 
-void bin(unsigned n)
-{
-	unsigned i;
-	for (i = 1 << 4; i > 0; i = i / 2)
-		(n & i) ? printf("1") : printf("0");
+	if (A == 0 && B == 0 && C == 0 && D == 1 && E == 0) {
+		return true;
+	}
+
+	if (A == 0 && B == 1 && D == 0 && E == 1) {
+		return true;
+	}
+
+	if (A == 1 && B == 0 && C == 0 && E == 0) {
+		return true;
+	}
+
+	if (A == 0 && B == 1 && C == 0 && E == 0) {
+		return true;
+	}
+
+	if (A == 0 && B == 1 && C == 1 && D == 0 && E == 1) {
+		return true;
+	}
+
+	if (A == 0 && B == 1 && C == 1 && D == 1 && E == 0) {
+		return true;
+	}
+
+	if (A == 1 && B == 0 && C == 1 && D == 1) {
+		return true;
+	}
+
+	if (A == 1 && B == 0 && C == 1 && D == 0 && E == 0) {
+		return true;
+	}
+
+	if (A == 0 && C == 0 && D == 1 && E == 1) {
+		return true;
+	}
+
+	if (A == 0 && C == 1 && D == 1 && E == 1) {
+		return true;
+	}
+
+	return false;
 }
 
 /**
